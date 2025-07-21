@@ -30,7 +30,32 @@ class KNApSAcKSearch():
         self.searchtype = searchtype
         self.keyword = keyword
 
-    def get_cmpds(self) -> list:
+    def _fetch(self, url: str, compound=False) -> BeautifulSoup:
+        """Download KNApSAcK website information for given url. If url for compound,
+        extract must be set to True in order to retrieve data.
+
+        Args:
+            url (str): url to search content
+            compound (bool): whether to extract compound information. Only useful
+                             if the url contains compound information.
+
+        Returns:
+            BeautifulSoup: downloaded website information
+        """
+        # get html content of results page
+        page = requests.get(url)
+        # parse the content
+        soup = BeautifulSoup(page.content, 'html.parser')
+        if compound:
+            # extract compounds' information
+            data = soup.find_all('td', {'colspan': 4})
+        else:
+            # extract links (corresponding to compounds)
+            data = [element['href'] for element in soup.find_all('a', href=True)]
+            data = [link for link in data if "information" in link]
+        return data
+
+    def get_links(self) -> list:
         """
         Retrieve list of compounds from user defined input by scraping the
         KNApSAcK website.
@@ -46,13 +71,7 @@ class KNApSAcKSearch():
         # (taken from https://stackoverflow.com/questions/54961679/python-removing-the-last-part-of-an-url) # noqa: E501
         search_url = self.base_url[:self.base_url.rfind('/')] + search_val
         # get html content of results page
-        page = requests.get(search_url)
-        # parse the content
-        soup = BeautifulSoup(page.content, 'html.parser')
-        # extract links (corresponding to compounds)
-        links = []
-        for element in soup.find_all('a', href=True):
-            links.append(element['href'])
+        links = self._fetch(search_url)
 
         return links
 
@@ -77,15 +96,12 @@ class KNApSAcKSearch():
             # define url
             url = self.base_url[:self.base_url.rfind('/')] + '/' + link
             # get html and parse the content
-            page = requests.get(url)
-            soup = BeautifulSoup(page.content, 'html.parser')
-            # filter to compounds' information
-            data = soup.find_all('td', {'colspan': 4})
+            data = self._fetch(url, compound=True)
             # extract name(s), CAS ID, KNApSAcK ID, and SMILES
             names = list(data[0].stripped_strings)
-            cas = data[3].text
-            dbid = data[4].text.split()[0]
-            smi = data[7].text
+            cas = data[3].get_text()
+            dbid = data[4].get_text().split()[0]
+            smi = data[7].get_text()
 
             # Store to dataframe
             res.loc[len(res)] = [names, cas, dbid, smi]
@@ -110,7 +126,7 @@ class KNApSAcKSearch():
         None.
         """
         # Search for compounds using user input
-        links = self.get_cmpds()
+        links = self.get_links()
         if len(links) > 1:
             print('Successfull search!!!')
             print(f'Number of compounds found: {len(links[1:])}')
