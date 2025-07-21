@@ -10,11 +10,12 @@ Modified on Wed Jul 21 2025
 @author: Dr. Freddy Bernal
 """
 # Import essentials
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
 from tqdm import tqdm
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 class KNApSAcKSearch():
