@@ -41,10 +41,14 @@ class KNApSAcKSearch():
             list: downloaded website information. Either links to compounds or compound
                   information.
         """
-        # get html content of results page
-        page = requests.get(url)
-        # parse the content
-        soup = BeautifulSoup(page.content, 'html.parser')
+        try:
+            # get html content of results page
+            page = requests.get(url)
+            # parse the content
+            soup = BeautifulSoup(page.content, 'html.parser')
+        except Exception as e:
+            print(f"Failed to scrape {url}: {e}")
+
         if compound:
             # extract compounds' information
             data = soup.find_all('td', {'colspan': 4})
