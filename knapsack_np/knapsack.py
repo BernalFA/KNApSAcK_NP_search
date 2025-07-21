@@ -24,7 +24,7 @@ class KNApSAcKSearch():
             searchtype (str): whether to search for 'metabolite' or 'organism'.
             keyword (str): specific name to search for.
         """
-        self.base_url = 'http://www.knapsackfamily.com/knapsack_core/top.php'
+        self._base_url = 'http://www.knapsackfamily.com/knapsack_core/top.php'
         self.searchtype = searchtype
         self.keyword = keyword
 
@@ -69,13 +69,13 @@ class KNApSAcKSearch():
         search_val = f'/result.php?sname={self.searchtype}&word={self.keyword}'
         # Remove last part of base url and add user defined url
         # (taken from https://stackoverflow.com/questions/54961679/python-removing-the-last-part-of-an-url) # noqa: E501
-        search_url = self.base_url[:self.base_url.rfind('/')] + search_val
+        search_url = self._base_url[:self._base_url.rfind('/')] + search_val
         # get html content of results page
         links = self._fetch(search_url)
 
         return links
 
-    def get_compound_data(self, link: str) -> dict:
+    def _get_compound_data(self, link: str) -> dict:
         """Fetch and extract compound information from the provided link.
 
         Args:
@@ -86,7 +86,7 @@ class KNApSAcKSearch():
                   and SMILES strings.
         """
         # define url
-        url = self.base_url[:self.base_url.rfind('/')] + '/' + link
+        url = self._base_url[:self._base_url.rfind('/')] + '/' + link
         # get html and parse the content
         data = self._fetch(url, compound=True)
         # extract name(s), CAS ID, KNApSAcK ID, and SMILES
@@ -120,7 +120,7 @@ class KNApSAcKSearch():
             #     results.append(self.get_compound_data(link))
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 futures = [
-                    executor.submit(self.get_compound_data, link) for link in links
+                    executor.submit(self._get_compound_data, link) for link in links
                 ]
                 for future in tqdm(
                     as_completed(futures), total=len(futures), desc="Compounds"
