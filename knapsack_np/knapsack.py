@@ -43,7 +43,7 @@ class KNApSAcKSearch():
         # transform user input into url chunk
         search_val = f'/result.php?sname={self.searchtype}&word={self.keyword}'
         # Remove last part of base url and add user defined url
-        # (taken from https://stackoverflow.com/questions/54961679/python-removing-the-last-part-of-an-url)
+        # (taken from https://stackoverflow.com/questions/54961679/python-removing-the-last-part-of-an-url) # noqa: E501
         search_url = self.base_url[:self.base_url.rfind('/')] + search_val
         # get html content of results page
         page = requests.get(search_url)
