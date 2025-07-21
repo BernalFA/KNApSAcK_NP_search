@@ -5,12 +5,29 @@ The application is based on scrapping of the original web database and limited t
 
 ## Requirements
 
-KNApSAcK search utility makes use of: 
+KNApSAcK search utility makes use of:
+* Python > 3.9
 * Requests 
 * Beautiful Soup
 * Pandas
+* tqdm
 
 ## Usage
+
+To run as python package, create a separate environment first
+
+```bash
+conda create -n knapsack
+conda install -c conda-forge requests, beautifulsoup4, pandas, tqdm
+```
+
+```python
+from knapsack_np import KNApSAcKSearch
+
+collector = KNApSAcKSearch(searchtype="organism", keyword="Baccharis")
+results = collector.search()
+```
+
 
 To run the GUI 
 
