@@ -43,7 +43,9 @@ class KNApSAcKSearch():
         """
         try:
             # get html content of results page
-            page = requests.get(url)
+            page = requests.get(url, timeout=10, headers={
+                "User-Agent": "Mozilla/5.0 (compatible; WebScraperBot/1.0)"
+            })
             # parse the content
             soup = BeautifulSoup(page.content, 'html.parser')
         except Exception as e:
