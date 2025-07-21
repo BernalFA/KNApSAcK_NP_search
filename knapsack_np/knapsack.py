@@ -9,7 +9,6 @@ Modified on Wed Jul 21 2025
 
 @author: Dr. Freddy Bernal
 """
-# Import essentials
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pandas as pd
@@ -19,6 +18,11 @@ from tqdm import tqdm
 
 
 class KNApSAcKSearch():
+    """Utility classes to perform searches on the KNApSAcK web database
+    (http://www.knapsackfamily.com/knapsack_core/top.php) using a metabolite or organism
+    as keyword.
+    """
+
     def __init__(self, searchtype: str, keyword: str):
         """
         Args:
