@@ -43,9 +43,7 @@ class KNApSAcKSearch():
         """
         try:
             # get html content of results page
-            page = requests.get(url, timeout=10, headers={
-                "User-Agent": "Mozilla/5.0 (compatible; WebScraperBot/1.0)"
-            })
+            page = requests.get(url)
             # parse the content
             soup = BeautifulSoup(page.content, 'html.parser')
         except Exception as e:
@@ -100,12 +98,13 @@ class KNApSAcKSearch():
         }
         return info
 
-    def search(self, max_workers=20) -> pd.DataFrame:
+    def search(self, max_workers=10) -> pd.DataFrame:
         """Perform complete search and information retrieval for keyword and searchtype.
 
         Args:
             max_workers (int, optional): number of simultaneous access to the KNApSAcK
-                                         website. Defaults to 20.
+                                         website. Defaults to 10 (higher values might
+                                         cause conflicts).
 
         Returns:
             pd.DataFrame: compound information (Name(s), CAS number, KNApSAcK ID,
