@@ -91,7 +91,7 @@ class KNApSAcKSearch():
         data = self._fetch(url, compound=True)
         # extract name(s), CAS ID, KNApSAcK ID, and SMILES
         info = {
-            "Names": list(data[0].stripped_strings),
+            "Names": ", ".join(list(data[0].stripped_strings)),
             "CAS No.": data[3].get_text(),
             "KNApSAcK ID": data[4].get_text().split()[0],
             "SMILES": data[7].get_text()
