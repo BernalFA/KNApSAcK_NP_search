@@ -30,7 +30,7 @@ class KNApSAcKSearch():
         self.searchtype = searchtype
         self.keyword = keyword
 
-    def _fetch(self, url: str, compound=False) -> BeautifulSoup:
+    def _fetch(self, url: str, compound=False) -> list:
         """Download KNApSAcK website information for given url. If url for compound,
         extract must be set to True in order to retrieve data.
 
@@ -40,7 +40,8 @@ class KNApSAcKSearch():
                              if the url contains compound information.
 
         Returns:
-            BeautifulSoup: downloaded website information
+            list: downloaded website information. Either links to compounds or compound
+                  information.
         """
         # get html content of results page
         page = requests.get(url)
@@ -56,14 +57,11 @@ class KNApSAcKSearch():
         return data
 
     def get_links(self) -> list:
-        """
-        Retrieve list of compounds from user defined input by scraping the
-        KNApSAcK website.
+        """Retrieve list of url links to compounds from user defined input by scraping
+        the KNApSAcK website.
 
-        Returns
-        -------
-        links : list
-            links to compounds from search results.
+        Returns:
+            list: url links to compounds obtained as result from specified search.
         """
         # transform user input into url chunk
         search_val = f'/result.php?sname={self.searchtype}&word={self.keyword}'
