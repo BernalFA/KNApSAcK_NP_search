@@ -73,47 +73,28 @@ class KNApSAcKSearch():
 
         return links
 
-    def retrieve_data(self, links: list) -> pd.DataFrame:
+    def get_compound_data(self, link: str) -> dict:
+        """Fetch and extract compound information from the provided link.
+
+        Args:
+            link (str): url fragment for a compound as provided by get_links()
+
+        Returns:
+            dict: compound information, including Name(s), CAS number, KNApSAcK ID,
+                  and SMILES strings.
         """
-        Search each link provided and retrieve predefined compound information.
-
-        Parameters
-        ----------
-        links : list
-            url links resulting from customized search with get_cmpds().
-
-        Returns
-        -------
-        res : pd.DataFrame
-            Matrix with Name(s), CAS ID, KNApSAcK ID and SMILES strings for all the
-            compounds obtained by the search.
-        """
-        # Retrieve data from each link
-        res = pd.DataFrame(columns=['Names', 'CAS', 'KNApSAcK_ID', 'smiles'])
-        for link in links[1:]:
-            # define url
-            url = self.base_url[:self.base_url.rfind('/')] + '/' + link
-            # get html and parse the content
-            data = self._fetch(url, compound=True)
-            # extract name(s), CAS ID, KNApSAcK ID, and SMILES
-            names = list(data[0].stripped_strings)
-            cas = data[3].get_text()
-            dbid = data[4].get_text().split()[0]
-            smi = data[7].get_text()
-
-            # Store to dataframe
-            res.loc[len(res)] = [names, cas, dbid, smi]
-            KNApSAcKSearch.progress += 1
-            spinner = self.spinning_cursor()
-            for _ in range(12):
-                sys.stdout.write(next(spinner))
-                sys.stdout.flush()
-                time.sleep(0.1)
-                sys.stdout.write('\b')
-
-        KNApSAcKSearch.progress = -1
-
-        return res
+        # define url
+        url = self.base_url[:self.base_url.rfind('/')] + '/' + link
+        # get html and parse the content
+        data = self._fetch(url, compound=True)
+        # extract name(s), CAS ID, KNApSAcK ID, and SMILES
+        info = {
+            "names": list(data[0].stripped_strings),
+            "cas": data[3].get_text(),
+            "dbid": data[4].get_text().split()[0],
+            "smi": data[7].get_text()
+        }
+        return info
 
     def execute(self) -> None:
         """
