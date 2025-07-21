@@ -13,13 +13,9 @@ Modified on Wed Jul 21 2025
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-import time
-import sys
 
 
 class KNApSAcKSearch():
-    progress = 0
-
     def __init__(self, searchtype: str, keyword: str):
         """
         Args:
@@ -116,13 +112,3 @@ class KNApSAcKSearch():
             print('Done')
         else:
             print('No results were found!')
-
-    def spinning_cursor(self):
-        """Simple utility to show progress of the process while running under CLI.
-
-        Yields:
-            str: alternating symbol.
-        """
-        while True:
-            for cursor in '|/-\\':
-                yield cursor
