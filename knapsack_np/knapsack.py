@@ -14,6 +14,7 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 class KNApSAcKSearch():
@@ -93,8 +94,12 @@ class KNApSAcKSearch():
         }
         return info
 
-    def search(self) -> pd.DataFrame:
+    def search(self, max_workers=20) -> pd.DataFrame:
         """Perform complete search and information retrieval for keyword and searchtype.
+
+        Args:
+            max_workers (int, optional): number of simultaneous access to the KNApSAcK
+                                         website. Defaults to 20.
 
         Returns:
             pd.DataFrame: compound information (Name(s), CAS number, KNApSAcK ID,
@@ -106,8 +111,18 @@ class KNApSAcKSearch():
             print(f'Number of compounds found: {len(links)}')
             print('Retrieving data ...')
             results = []
-            for link in tqdm(links, desc="Compounds"):
-                results.append(self.get_compound_data(link))
+            # for link in tqdm(links, desc="Compounds"):
+            #     results.append(self.get_compound_data(link))
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = [
+                    executor.submit(self.get_compound_data, link) for link in links
+                ]
+                for future in tqdm(
+                    as_completed(futures), total=len(futures), desc="Compounds"
+                ):
+                    res = future.result()
+                    if res:
+                        results.append(res)
             results = pd.DataFrame(results)
             print('Done')
             return results
