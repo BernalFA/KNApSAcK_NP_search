@@ -138,3 +138,39 @@ class KNApSAcKSearch():
             return results
         else:
             print('No results were found!')
+
+    def search_with_progress(self, callback, max_workers=10) -> pd.DataFrame:
+        """Perform complete search and information retrieval for keyword and searchtype
+        using a callback function required for proper working of progress bar in GUI
+        with Tkinter.
+
+        Args:
+            callback (Callable): function for updating progress in GUI.
+            max_workers (int, optional): number of simultaneous access to the KNApSAcK
+                                         website. Defaults to 10 (higher values might
+                                         cause conflicts).
+
+        Returns:
+            pd.DataFrame: compound information (Name(s), CAS number, KNApSAcK ID,
+                          and SMILES strings) for all the results from the search.
+        """
+        links = self.get_links()
+        if len(links) > 1:
+            results = []
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = [
+                    executor.submit(self._get_compound_data, link) for link in links
+                ]
+                counter = 0
+                for future in tqdm(
+                    as_completed(futures), total=len(futures), desc="Compounds"
+                ):
+                    res = future.result()
+                    counter += 1
+                    callback(counter)
+                    if res:
+                        results.append(res)
+            results = pd.DataFrame(results)
+            return results
+        else:
+            return None
