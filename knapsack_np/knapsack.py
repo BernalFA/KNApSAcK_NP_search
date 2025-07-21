@@ -61,6 +61,8 @@ class KNApSAcKSearch():
             # extract links (corresponding to compounds)
             data = [element['href'] for element in soup.find_all('a', href=True)]
             data = [link for link in data if "information" in link]
+            # temporarily save source and CAS No for each compound
+            self._get_source(soup)
         return data
 
     def get_links(self) -> list:
@@ -101,6 +103,9 @@ class KNApSAcKSearch():
             "KNApSAcK ID": data[4].get_text().split()[0],
             "SMILES": data[7].get_text()
         }
+        if self.searchtype == "organism":
+            organism = self._partial_results.query("`CAS No.` == @info['CAS No.']")
+            info["Organism"] = organism["Organism"].values[0]
         return info
 
     def search(self, max_workers=10) -> pd.DataFrame:
@@ -174,3 +179,23 @@ class KNApSAcKSearch():
             return results
         else:
             return None
+
+    def _get_source(self, soup: BeautifulSoup):
+        """create a pandas dataframe stored as _partial_results, containing CAS number
+        and organism (source) of each compound in the results. Only useful when
+        searchtype is organism.
+
+        Args:
+            soup (BeautifulSoup): data extracted from a search by organism.
+        """
+        rows = soup.find_all("tr")
+        results = []
+        for row in rows:
+            cells = row.find_all("td")
+            res = {
+                "CAS No.": cells[1].get_text(strip=True),
+                "Organism": cells[5].get_text()
+            }
+            results.append(res)
+
+        self._partial_results = pd.DataFrame(results)
