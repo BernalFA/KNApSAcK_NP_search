@@ -10,16 +10,14 @@ Modified on Jul 21 2025
 @author: Dr. Freddy Bernal
 """
 # Import essentials
+import threading
 import tkinter as tk
 import webbrowser
-import time
+from tkinter import ttk
 
 from knapsack_np import KNApSAcKSearch
 
 
-###############
-#  FUNCTIONS  #
-###############
 class KNApSAcKGUI(tk.Tk):
 
     def __init__(self, *args, **kwargs):
@@ -27,8 +25,7 @@ class KNApSAcKGUI(tk.Tk):
         self.title('KNApSAcK_NP_Search')
         self.geometry('600x260')
         self.resizable(width=False, height=False)
-        # self.values = [0, 20, 40, 60, 80, 100, 80, 60, 40, 20]
-        # self.values_cycle = cycle(self.values)
+        self._base_url = 'http://www.knapsackfamily.com/knapsack_core/top.php'
 
     def makeform(self):
         # Create frame for title
@@ -43,7 +40,7 @@ class KNApSAcKGUI(tk.Tk):
                                    cursor='hand2',
                                    bg='#deebf7')
         # Add hyperlink to original website
-        self.lbl_title1.bind('<Button-1>', lambda e: self.hyperlink)
+        self.lbl_title1.bind('<Button-1>', lambda e: self.hyperlink())
         self.lbl_title1.pack()
 
         # Create frame for user input information
@@ -84,6 +81,14 @@ class KNApSAcKGUI(tk.Tk):
         # Create frame for search button
         self.frm_btn = tk.Frame(self, height=100, width=300, padx=5, pady=5)
         self.frm_btn.pack()
+        # Instantiate a progress bar
+        self.progress_frame = tk.Frame(self)
+        self.lbl_progress = tk.Label(self.progress_frame, text="Progress",
+                                     font=('Arial', 14))
+        self.lbl_progress.grid(row=0, column=0, padx=(0, 10))
+        self.progress = ttk.Progressbar(self.progress_frame, orient="horizontal",
+                                        length=300, mode="determinate")
+        self.progress.grid(row=0, column=1)
         # Create search button
         self.btn_search = tk.Button(self.frm_btn,
                                     text='Search',
@@ -95,9 +100,8 @@ class KNApSAcKGUI(tk.Tk):
 
     # Define callback function directed to KNApSAcK website
     def hyperlink(self):
-        webbrowser.open_new(self.base_url)
+        webbrowser.open_new(self._base_url)
 
-    # Define execution function
     def execute(self):
         # Make globals for user input
         keyword = self.ent_key.get()
@@ -107,25 +111,49 @@ class KNApSAcKGUI(tk.Tk):
         elif searchtype == 2:
             searchtype = 'organism'
 
-        self.update_idletasks()
-        self.frm_pro = tk.Frame(self, height=100, width=300, 
-                                padx=5, pady=5)
-        self.frm_pro.pack(fill='x')
+        # run process as a thread to avoid blocking GUI (and refreshing progress bar)
+        threading.Thread(
+            target=self.run_search,
+            args=(searchtype, keyword),
+            daemon=True
+        ).start()
+
+    def show_progress_bar(self, total):
+        self.progress["maximum"] = total
+        self.progress["value"] = 0
+        self.progress_frame.pack(pady=10)
+
+    def run_search(self, searchtype, keyword):
         # Search for compounds using user input
         collector = KNApSAcKSearch(searchtype, keyword)
-        results = collector.search()
-        if len(results) > 1:
-            # filename = f'results_KNApSAcK_{searchtype}_{keyword}.csv'
-            # results.to_csv(filename, index=False)
-            self.quit()
-        else:
-            top = tk.Toplevel()
-            top.title('Result')
-            top.geometry('120x90')
-            msg = tk.Message(top, text='No results found', font=('Arial', 18, 'bold'))
-            msg.pack()
-            button = tk.Button(top, text='Dismiss', command=top.destroy)
-            button.pack()
+        total = len(collector.get_links())
+
+        self.after(0, lambda: self.show_progress_bar(total))
+
+        results = collector.search_with_progress(self.safe_callback)
+
+        def show_results():
+            self.progress_frame.pack_forget()
+            if results is not None:
+                self.quit()
+            else:
+                top = tk.Toplevel()
+                top.title('Result')
+                top.geometry('120x90')
+                msg = tk.Message(top, text='No results found',
+                                 font=('Arial', 18, 'bold'))
+                msg.pack()
+                button = tk.Button(top, text='Dismiss', command=top.destroy)
+                button.pack()
+
+        self.after(0, show_results)
+
+    def safe_callback(self, value):
+        self.after(0, self.update_progress, value)
+
+    def update_progress(self, value):
+        self.progress["value"] = value
+        self.update_idletasks()
 
 
 if __name__ == '__main__':
