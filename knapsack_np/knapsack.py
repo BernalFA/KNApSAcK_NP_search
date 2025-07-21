@@ -13,6 +13,7 @@ Modified on Wed Jul 21 2025
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+from tqdm import tqdm
 
 
 class KNApSAcKSearch():
@@ -85,30 +86,30 @@ class KNApSAcKSearch():
         data = self._fetch(url, compound=True)
         # extract name(s), CAS ID, KNApSAcK ID, and SMILES
         info = {
-            "names": list(data[0].stripped_strings),
-            "cas": data[3].get_text(),
-            "dbid": data[4].get_text().split()[0],
-            "smi": data[7].get_text()
+            "Names": list(data[0].stripped_strings),
+            "CAS No.": data[3].get_text(),
+            "KNApSAcK ID": data[4].get_text().split()[0],
+            "SMILES": data[7].get_text()
         }
         return info
 
-    def execute(self) -> None:
-        """
-        Creates global variables for user input entries and run search
+    def search(self) -> pd.DataFrame:
+        """Perform complete search and information retrieval for keyword and searchtype.
 
-        Returns
-        -------
-        None.
+        Returns:
+            pd.DataFrame: compound information (Name(s), CAS number, KNApSAcK ID,
+                          and SMILES strings) for all the results from the search.
         """
-        # Search for compounds using user input
         links = self.get_links()
         if len(links) > 1:
             print('Successfull search!!!')
-            print(f'Number of compounds found: {len(links[1:])}')
-            filename = f'results_KNApSAcK_{self.searchtype}_{self.keyword}.csv'
+            print(f'Number of compounds found: {len(links)}')
             print('Retrieving data ...')
-            results = self.retrieve_data(links)
-            results.to_csv(filename, index=False)
+            results = []
+            for link in tqdm(links, desc="Compounds"):
+                results.append(self.get_compound_data(link))
+            results = pd.DataFrame(results)
             print('Done')
+            return results
         else:
             print('No results were found!')
