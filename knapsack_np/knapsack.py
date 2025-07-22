@@ -171,9 +171,7 @@ class KNApSAcKSearch():
                     executor.submit(self._get_compound_data, link) for link in links
                 ]
                 counter = 0
-                for future in tqdm(
-                    as_completed(futures), total=len(futures), desc="Compounds"
-                ):
+                for future in as_completed(futures):
                     res = future.result()
                     counter += 1
                     callback(counter)
