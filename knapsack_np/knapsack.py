@@ -16,6 +16,8 @@ import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
+from knapsack_np.utils import timer
+
 
 class KNApSAcKSearch():
     """Utility classes to perform searches on the KNApSAcK web database
@@ -111,6 +113,7 @@ class KNApSAcKSearch():
             info["Organism"] = organism["Organism"].values[0]
         return info
 
+    @timer
     def search(self, max_workers=10) -> pd.DataFrame:
         """Perform complete search and information retrieval for keyword and searchtype.
 
