@@ -23,15 +23,18 @@ class KNApSAcKSearch():
     as keyword.
     """
 
-    def __init__(self, searchtype: str, keyword: str):
+    def __init__(self, searchtype: str, keyword: str, use_tqdm: bool = True):
         """
         Args:
             searchtype (str): whether to search for 'metabolite' or 'organism'.
             keyword (str): specific name to search for.
+            use_tqdm (bool): when set to True (default), a progress bar using tqdm will
+                             be displayed during run in CLI.
         """
         self._base_url = 'http://www.knapsackfamily.com/knapsack_core/top.php'
         self.searchtype = searchtype
         self.keyword = keyword
+        self.use_tqdm = use_tqdm
 
     def _fetch(self, url: str, compound=False) -> list:
         """Download KNApSAcK website information for given url. If url for compound,
@@ -132,10 +135,11 @@ class KNApSAcKSearch():
                 futures = [
                     executor.submit(self._get_compound_data, link) for link in links
                 ]
-                for future in tqdm(
+                tasks = tqdm(
                     as_completed(futures), total=len(futures), desc="Compounds"
-                ):
-                    res = future.result()
+                ) if self.use_tqdm else as_completed(futures)
+                for task in tasks:
+                    res = task.result()
                     if res:
                         results.append(res)
             results = pd.DataFrame(results)
