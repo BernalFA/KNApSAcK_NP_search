@@ -53,7 +53,7 @@ class KNApSAcKSearch():
             # get html content of results page
             page = requests.get(url)
             # parse the content
-            soup = BeautifulSoup(page.content, 'html.parser')
+            soup = BeautifulSoup(page.text, 'html.parser')
         except Exception as e:
             print(f"Failed to scrape {url}: {e}")
 
@@ -79,7 +79,7 @@ class KNApSAcKSearch():
                 # get html content of results page
                 page = requests.get(url)
                 # parse the content
-                soup = BeautifulSoup(page.content, 'html.parser')
+                soup = BeautifulSoup(page.text, 'html.parser')
                 # extract compounds' information
                 data = soup.find_all('td', {'colspan': 4})
                 # validate content
