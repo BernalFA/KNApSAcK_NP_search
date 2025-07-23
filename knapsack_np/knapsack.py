@@ -159,8 +159,9 @@ class KNApSAcKSearch():
             print('Retrieving data ...')
             results = []
             if max_workers == 1:
-                for link in tqdm(links, desc="Compounds"):
-                    results.append(self._get_compound_data(link))
+                tasks = tqdm(links, desc="Compounds") if self.use_tqdm else links
+                for task in tasks:
+                    results.append(self._get_compound_data(task))
             else:
                 with ThreadPoolExecutor(max_workers=max_workers) as executor:
                     futures = [
