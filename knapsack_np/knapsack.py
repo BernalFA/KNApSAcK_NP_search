@@ -18,7 +18,7 @@ import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
-from knapsack_np.utils import timer
+from knapsack_np.utils import timer, ScrapingFatalError
 
 
 class KNApSAcKSearch():
@@ -93,7 +93,7 @@ class KNApSAcKSearch():
                     wait = 5 ** attempt
                     time.sleep(wait)
                 else:
-                    raise SystemExit(f"Unsuccessfully exceeded retries for {url}: {e}")
+                    raise ScrapingFatalError(url, attempt, e)
 
     def get_links(self) -> list:
         """Retrieve list of url links to compounds from user defined input by scraping

@@ -21,3 +21,14 @@ def timer(func):
 
         return result
     return wrapper
+
+
+class ScrapingFatalError(Exception):
+    def __init__(self, url, attempts, original_exception):
+        self.url = url
+        self.attemtps = attempts
+        self.original_message = original_exception
+        message = (
+            f"Exceeded {attempts} retries for {url}: {original_exception}"
+        )
+        super().__init__(message)
