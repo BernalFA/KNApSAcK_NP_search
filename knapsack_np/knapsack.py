@@ -88,13 +88,12 @@ class KNApSAcKSearch():
                 time.sleep(random.uniform(1, 3))
                 return data
             except Exception as e:
-                print(f"Failed to scrape {url}: {e}")
                 # retry access after exponential backoff
                 if attempt < MAX_RETRIES:
                     wait = 5 ** attempt
                     time.sleep(wait)
                 else:
-                    return None
+                    raise SystemExit(f"Unsuccessfully exceeded retries for {url}: {e}")
 
     def get_links(self) -> list:
         """Retrieve list of url links to compounds from user defined input by scraping
