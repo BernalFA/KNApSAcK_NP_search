@@ -9,6 +9,8 @@ Modified on Wed Jul 21 2025
 
 @author: Dr. Freddy Bernal
 """
+import random
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pandas as pd
@@ -38,18 +40,14 @@ class KNApSAcKSearch():
         self.keyword = keyword
         self.use_tqdm = use_tqdm
 
-    def _fetch(self, url: str, compound=False) -> list:
-        """Download KNApSAcK website information for given url. If url for compound,
-        extract must be set to True in order to retrieve data.
+    def _fetch_results(self, url: str) -> list:
+        """Download KNApSAcK website information for given url.
 
         Args:
             url (str): url to search content
-            compound (bool): whether to extract compound information. Only useful
-                             if the url contains compound information.
 
         Returns:
-            list: downloaded website information. Either links to compounds or compound
-                  information.
+            list: downloaded website information as links for compounds.
         """
         try:
             # get html content of results page
@@ -59,16 +57,44 @@ class KNApSAcKSearch():
         except Exception as e:
             print(f"Failed to scrape {url}: {e}")
 
-        if compound:
-            # extract compounds' information
-            data = soup.find_all('td', {'colspan': 4})
-        else:
-            # extract links (corresponding to compounds)
-            data = [element['href'] for element in soup.find_all('a', href=True)]
-            data = [link for link in data if "information" in link]
-            # temporarily save source and CAS No for each compound
-            self._get_source(soup)
+        # extract links (corresponding to compounds)
+        data = [element['href'] for element in soup.find_all('a', href=True)]
+        data = [link for link in data if "information" in link]
+        # temporarily save source and CAS No for each compound
+        self._get_source(soup)
         return data
+
+    def _fetch_cmpd_information(self, url: str) -> list:
+        """Download KNApSAcK compound information for given url.
+
+        Args:
+            url (str): url to search content
+
+        Returns:
+            list: downloaded compound information.
+        """
+        MAX_RETRIES = 3
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                # get html content of results page
+                page = requests.get(url)
+                # parse the content
+                soup = BeautifulSoup(page.content, 'html.parser')
+                # extract compounds' information
+                data = soup.find_all('td', {'colspan': 4})
+                # validate content
+                if len(data) < 8:
+                    raise ValueError(f"Incomplete data for {url} (len: {len(data)})")
+                time.sleep(random.uniform(1, 3))
+                return data
+            except Exception as e:
+                print(f"Failed to scrape {url}: {e}")
+                # retry access after exponential backoff
+                if attempt < MAX_RETRIES:
+                    wait = 5 ** attempt
+                    time.sleep(wait)
+                else:
+                    return None
 
     def get_links(self) -> list:
         """Retrieve list of url links to compounds from user defined input by scraping
@@ -83,7 +109,7 @@ class KNApSAcKSearch():
         # (taken from https://stackoverflow.com/questions/54961679/python-removing-the-last-part-of-an-url) # noqa: E501
         search_url = self._base_url[:self._base_url.rfind('/')] + search_val
         # get html content of results page
-        links = self._fetch(search_url)
+        links = self._fetch_results(search_url)
 
         return links
 
@@ -100,7 +126,7 @@ class KNApSAcKSearch():
         # define url
         url = self._base_url[:self._base_url.rfind('/')] + '/' + link
         # get html and parse the content
-        data = self._fetch(url, compound=True)
+        data = self._fetch_cmpd_information(url)
         # extract name(s), CAS ID, KNApSAcK ID, and SMILES
         info = {
             "Names": ", ".join(list(data[0].stripped_strings)),
@@ -132,19 +158,21 @@ class KNApSAcKSearch():
             print(f'Number of compounds found: {len(links)}')
             print('Retrieving data ...')
             results = []
-            # for link in tqdm(links, desc="Compounds"):
-            #     results.append(self.get_compound_data(link))
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                futures = [
-                    executor.submit(self._get_compound_data, link) for link in links
-                ]
-                tasks = tqdm(
-                    as_completed(futures), total=len(futures), desc="Compounds"
-                ) if self.use_tqdm else as_completed(futures)
-                for task in tasks:
-                    res = task.result()
-                    if res:
-                        results.append(res)
+            if max_workers == 1:
+                for link in tqdm(links, desc="Compounds"):
+                    results.append(self._get_compound_data(link))
+            else:
+                with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    futures = [
+                        executor.submit(self._get_compound_data, link) for link in links
+                    ]
+                    tasks = tqdm(
+                        as_completed(futures), total=len(futures), desc="Compounds"
+                    ) if self.use_tqdm else as_completed(futures)
+                    for task in tasks:
+                        res = task.result()
+                        if res:
+                            results.append(res)
             results = pd.DataFrame(results)
             print('Done')
             return results
