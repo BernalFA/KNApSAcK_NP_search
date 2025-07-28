@@ -152,7 +152,7 @@ class KNApSAcKSearch():
                           and SMILES strings) for all the results from the search.
         """
         links = self.get_links()
-        if len(links) > 1:
+        if len(links) >= 1:
             print('Successfull search!!!')
             print(f'Number of compounds found: {len(links)}')
             print('Retrieving data ...')
